@@ -1,0 +1,24 @@
+{
+  "name": "Vex.Assistant.Editor",
+  "rootNamespace": "Vex.Assistant.Editor",
+  "references": [
+    "Unity.AI.Assistant.Runtime",
+    "Unity.AI.Assistant.Editor",
+    "Unity.AI.Assistant.API.Editor",
+    "Unity.AI.Assistant.UI.Editor",
+    "Unity.AI.Toolkit.Accounts",
+    "UnityCliConnector.Editor",
+    "Vex.Codex.Editor"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

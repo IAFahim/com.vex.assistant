@@ -1,0 +1,13 @@
+{
+  "name": "com.vex.assistant",
+  "version": "0.1.0",
+  "displayName": "Vex Assistant Bridge",
+  "description": "Vex specialized agents + thin [AgentTool] wrappers over the vex unity-cli tools, on top of Unity AI Assistant. Driven by unity-cli (lean) or the Assistant. No edits to com.unity.ai.assistant.",
+  "unity": "6000.0",
+  "dependencies": {
+    "com.unity.nuget.newtonsoft-json": "3.2.1"
+  },
+  "author": {
+    "name": "Vex Interactive"
+  }
+}
