@@ -162,22 +162,25 @@ namespace Vex.Assistant.Editor
                     var root = JObject.Parse(File.ReadAllText(path));
                     if (root["skills"] is not JObject skills) return result;
                     foreach (var p in skills.Properties())
-                    {
-                        if (p.Value is not JObject s) continue;
-                        var rc = s.Value<int?>("ratingCount") ?? 0;
-                        var rsum = s.Value<double?>("ratingSum") ?? 0;
-                        result[p.Name] = new SkillStat
-                        {
-                            Selected = s.Value<int?>("selected") ?? 0,
-                            Used = s.Value<int?>("used") ?? 0,
-                            RatingCount = rc,
-                            AvgRating = rc > 0 ? rsum / rc : 0,
-                            Suggestion = s.Value<string>("lastSuggestion") ?? "",
-                        };
-                    }
+                        if (p.Value is JObject s)
+                            result[p.Name] = ParseStat(s);
                 }
                 catch { /* corrupt/locked → show no usage */ }
                 return result;
+            }
+
+            static SkillStat ParseStat(JObject s)
+            {
+                var rc = s.Value<int?>("ratingCount") ?? 0;
+                var rsum = s.Value<double?>("ratingSum") ?? 0;
+                return new SkillStat
+                {
+                    Selected = s.Value<int?>("selected") ?? 0,
+                    Used = s.Value<int?>("used") ?? 0,
+                    RatingCount = rc,
+                    AvgRating = rc > 0 ? rsum / rc : 0,
+                    Suggestion = s.Value<string>("lastSuggestion") ?? "",
+                };
             }
         }
     }

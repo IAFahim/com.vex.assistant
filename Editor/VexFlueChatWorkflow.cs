@@ -435,11 +435,7 @@ namespace Vex.Assistant.Editor
             if (!c.Ok) sb.AppendLine("⚠️ _ok=false — work may be incomplete._").AppendLine();
             if (!string.IsNullOrEmpty(c.Explanation)) sb.AppendLine(c.Explanation).AppendLine();
             if (!string.IsNullOrEmpty(c.Result)) sb.AppendLine("```").AppendLine(c.Result).AppendLine("```");
-            if (c.Undo != null && c.Undo.Count > 0)
-            {
-                sb.AppendLine().AppendLine("**Undo journal:**");
-                foreach (var u in c.Undo) sb.AppendLine("- " + u);
-            }
+            AppendUndoJournal(sb, c.Undo);
             // forge-routed turns: show which skills the discovery router curated for the worker (c.Skills is parsed
             // from the envelope's `skills`), plus the validation-loop verdict + per-round trail (RawJson-only fields).
             if (c.Skills != null && c.Skills.Count > 0)
@@ -449,6 +445,14 @@ namespace Vex.Assistant.Editor
             if (!string.IsNullOrEmpty(c.Model)) sb.AppendLine().AppendLine("_model: " + c.Model + "_");
             var text = sb.ToString();
             return string.IsNullOrEmpty(text) ? "(flue returned an empty card)" : text;
+        }
+
+        static void AppendUndoJournal(StringBuilder sb, IReadOnlyList<string> undo)
+        {
+            if (undo == null || undo.Count == 0)
+                return;
+            sb.AppendLine().AppendLine("**Undo journal:**");
+            foreach (var u in undo) sb.AppendLine("- " + u);
         }
 
         // The forge envelope (superset card) adds judge{verdict,score,blocking_issues,model,modelsDiverge} and
@@ -464,23 +468,31 @@ namespace Vex.Assistant.Editor
             if (root["judge"] is not JObject judge)
                 return;
 
+            AppendVerdictLine(sb, judge, root["rounds"] as JArray);
+            AppendBlockingIssues(sb, judge["blocking_issues"] as JArray);
+            if (judge.Value<bool?>("modelsDiverge") == false)
+                sb.AppendLine("_note: coder and judge ran the same model — less verification diversity._");
+        }
+
+        static void AppendVerdictLine(StringBuilder sb, JObject judge, JArray rounds)
+        {
             var verdict = (string)judge["verdict"] ?? "?";
             var score = judge["score"]?.ToString() ?? "?";
             var icon = string.Equals(verdict, "pass", StringComparison.OrdinalIgnoreCase) ? "✅" : "⚠️";
 
             sb.AppendLine().Append("**Validation loop:** ").Append(icon).Append(' ')
                 .Append(verdict).Append(" (score ").Append(score).Append(')');
-            if (root["rounds"] is JArray rounds && rounds.Count > 0)
+            if (rounds != null && rounds.Count > 0)
                 sb.Append(" · ").Append(rounds.Count).Append(rounds.Count == 1 ? " round" : " rounds");
             sb.AppendLine();
+        }
 
-            if (judge["blocking_issues"] is JArray issues && issues.Count > 0)
-            {
-                sb.AppendLine("**Blocking issues:**");
-                foreach (var i in issues) sb.Append("- ").AppendLine(i?.ToString());
-            }
-            if (judge.Value<bool?>("modelsDiverge") == false)
-                sb.AppendLine("_note: coder and judge ran the same model — less verification diversity._");
+        static void AppendBlockingIssues(StringBuilder sb, JArray issues)
+        {
+            if (issues == null || issues.Count == 0)
+                return;
+            sb.AppendLine("**Blocking issues:**");
+            foreach (var i in issues) sb.Append("- ").AppendLine(i?.ToString());
         }
 
         protected override void DisposeTransport()

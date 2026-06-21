@@ -58,6 +58,23 @@ namespace Vex.Assistant.Editor
             {
                 EditorGUILayout.Space(4);
 
+                DrawMasterPassword();
+
+                EditorGUILayout.Space(6);
+                if (m_Keys == null)
+                {
+                    EditorGUILayout.HelpBox(m_LockError ?? "Locked.", MessageType.Warning);
+                    return;
+                }
+
+                DrawKeysSection();
+                DrawSaveBar();
+                DrawRoutingPolicy();
+                DrawUsageSection();
+            }
+
+            void DrawMasterPassword()
+            {
                 EditorGUILayout.LabelField("Master password (machine-local, never committed)", EditorStyles.boldLabel);
                 using (new EditorGUILayout.HorizontalScope())
                 {
@@ -76,14 +93,10 @@ namespace Vex.Assistant.Editor
                     "Keys are AES-256 encrypted with this password and stored in ProjectSettings/VexKeyVault.json (safe " +
                     "to commit & sync). The password lives only in EditorPrefs — enter the same one on each machine.",
                     MessageType.Info);
+            }
 
-                EditorGUILayout.Space(6);
-                if (m_Keys == null)
-                {
-                    EditorGUILayout.HelpBox(m_LockError ?? "Locked.", MessageType.Warning);
-                    return;
-                }
-
+            void DrawKeysSection()
+            {
                 using (new EditorGUILayout.HorizontalScope())
                 {
                     EditorGUILayout.LabelField($"Keys ({m_Keys.Count})", EditorStyles.boldLabel);
@@ -94,37 +107,46 @@ namespace Vex.Assistant.Editor
 
                 int removeAt = -1;
                 for (int i = 0; i < m_Keys.Count; i++)
-                {
-                    var k = m_Keys[i];
-                    using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
-                    {
-                        EditorGUI.BeginChangeCheck();
-                        using (new EditorGUILayout.HorizontalScope())
-                        {
-                            k.label = EditorGUILayout.TextField(k.label, GUILayout.MinWidth(80));
-                            k.kind = k_Kinds[EditorGUILayout.Popup(System.Array.IndexOf(k_Kinds, k.kind) is var ki && ki >= 0 ? ki : 0, k_Kinds, GUILayout.Width(80))];
-                            if (GUILayout.Button("✕", GUILayout.Width(22))) removeAt = i;
-                        }
-                        k.apiKey = EditorGUILayout.PasswordField("API key", k.apiKey);
-                        using (new EditorGUILayout.HorizontalScope())
-                        {
-                            k.model = EditorGUILayout.TextField("Model", k.model);
-                            EditorGUILayout.LabelField("Priority", GUILayout.Width(52));
-                            k.priority = EditorGUILayout.IntField(k.priority, GUILayout.Width(44));
-                        }
-                        if (k.kind == "glm")
-                        {
-                            using (new EditorGUILayout.HorizontalScope())
-                            {
-                                k.peakGuard = EditorGUILayout.ToggleLeft("Pause at peak", k.peakGuard, GUILayout.Width(120));
-                                k.scope = EditorGUILayout.TextField("Scope", k.scope);
-                            }
-                        }
-                        if (EditorGUI.EndChangeCheck()) m_Dirty = true;
-                    }
-                }
+                    if (DrawKeyCard(m_Keys[i]))
+                        removeAt = i;
                 if (removeAt >= 0) { m_Keys.RemoveAt(removeAt); m_Dirty = true; }
+            }
 
+            // Draws one key card; returns true if its remove (✕) button was clicked this frame.
+            bool DrawKeyCard(VexKeyVault.Key k)
+            {
+                bool remove = false;
+                using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+                {
+                    EditorGUI.BeginChangeCheck();
+                    using (new EditorGUILayout.HorizontalScope())
+                    {
+                        k.label = EditorGUILayout.TextField(k.label, GUILayout.MinWidth(80));
+                        k.kind = k_Kinds[EditorGUILayout.Popup(System.Array.IndexOf(k_Kinds, k.kind) is var ki && ki >= 0 ? ki : 0, k_Kinds, GUILayout.Width(80))];
+                        if (GUILayout.Button("✕", GUILayout.Width(22))) remove = true;
+                    }
+                    k.apiKey = EditorGUILayout.PasswordField("API key", k.apiKey);
+                    using (new EditorGUILayout.HorizontalScope())
+                    {
+                        k.model = EditorGUILayout.TextField("Model", k.model);
+                        EditorGUILayout.LabelField("Priority", GUILayout.Width(52));
+                        k.priority = EditorGUILayout.IntField(k.priority, GUILayout.Width(44));
+                    }
+                    if (k.kind == "glm")
+                    {
+                        using (new EditorGUILayout.HorizontalScope())
+                        {
+                            k.peakGuard = EditorGUILayout.ToggleLeft("Pause at peak", k.peakGuard, GUILayout.Width(120));
+                            k.scope = EditorGUILayout.TextField("Scope", k.scope);
+                        }
+                    }
+                    if (EditorGUI.EndChangeCheck()) m_Dirty = true;
+                }
+                return remove;
+            }
+
+            void DrawSaveBar()
+            {
                 using (new EditorGUILayout.HorizontalScope())
                 {
                     using (new EditorGUI.DisabledScope(!m_Dirty || !VexKeyVault.HasMasterPassword))
@@ -133,7 +155,10 @@ namespace Vex.Assistant.Editor
                 }
                 if (m_Dirty)
                     EditorGUILayout.HelpBox("Unsaved changes — Save to encrypt & write the vault.", MessageType.None);
+            }
 
+            void DrawRoutingPolicy()
+            {
                 EditorGUILayout.Space(8);
                 EditorGUILayout.LabelField("Routing policy", EditorStyles.boldLabel);
                 EditorGUI.BeginChangeCheck();
@@ -141,7 +166,10 @@ namespace Vex.Assistant.Editor
                 m_Policy.peakGuard = EditorGUILayout.Toggle(new GUIContent("Pause GLM at peak", "Skip GLM 14:00–18:00 UTC+8 → MiniMax."), m_Policy.peakGuard);
                 m_Policy.plan = Popup("Plan (for est.)", m_Policy.plan, k_Plans, k_PlanLabels);
                 if (EditorGUI.EndChangeCheck()) VexKeyVault.SavePolicy(m_Policy);
+            }
 
+            void DrawUsageSection()
+            {
                 EditorGUILayout.Space(8);
                 using (new EditorGUILayout.HorizontalScope())
                 {

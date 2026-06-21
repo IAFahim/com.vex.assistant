@@ -43,23 +43,10 @@ namespace Vex.Assistant.Editor
 
         public static object HandleCommand(JObject @params)
         {
-            string agentId = (string)@params["agent"];
-            if (string.IsNullOrEmpty(agentId))
-                return new ErrorResponse("Required param 'agent' is missing (see agent_list).", new { code = "MISSING_PREREQUISITE" });
-
             string prompt = (string)@params["prompt"];
-            if (string.IsNullOrEmpty(prompt))
-                return new ErrorResponse("Required param 'prompt' is missing.", new { code = "MISSING_PREREQUISITE" });
-
-            var def = VexAgents.Find(agentId);
-            if (def == null)
-            {
-                var ids = string.Join(", ", VexAgents.All.Select(a => a.Id));
-                return new ErrorResponse($"No agent '{agentId}'. Available: {ids}", new { code = "NOT_FOUND" });
-            }
-
-            if (string.IsNullOrEmpty(def.FlueWorkflow))
-                return new ErrorResponse($"Agent '{def.Id}' has no flue route.", new { code = "MISSING_PREREQUISITE" });
+            var def = Validate(@params, out var prereqError);
+            if (prereqError != null)
+                return prereqError;
 
             var flueDir = CodexSettings.Load().FlueDir;
             if (string.IsNullOrEmpty(flueDir))
@@ -96,6 +83,43 @@ namespace Vex.Assistant.Editor
             return new SuccessResponse(
                 $"flue job started for agent '{def.Id}' (model: {(string.IsNullOrEmpty(model) ? "default" : model)}). Poll it with: assistant_result {{\"job\":\"{job.Id}\"}}.",
                 new { jobId = job.Id, agent = def.Id, backend = "flue", status = "running" });
+        }
+
+        // Validates the required params in the original order (agent → prompt → known agent → flue route). On the first
+        // failure returns null with an ErrorResponse in prereqError; on success returns the resolved agent def.
+        static VexAgentDef Validate(JObject @params, out object prereqError)
+        {
+            prereqError = null;
+
+            string agentId = (string)@params["agent"];
+            if (string.IsNullOrEmpty(agentId))
+            {
+                prereqError = new ErrorResponse("Required param 'agent' is missing (see agent_list).", new { code = "MISSING_PREREQUISITE" });
+                return null;
+            }
+
+            string prompt = (string)@params["prompt"];
+            if (string.IsNullOrEmpty(prompt))
+            {
+                prereqError = new ErrorResponse("Required param 'prompt' is missing.", new { code = "MISSING_PREREQUISITE" });
+                return null;
+            }
+
+            var def = VexAgents.Find(agentId);
+            if (def == null)
+            {
+                var ids = string.Join(", ", VexAgents.All.Select(a => a.Id));
+                prereqError = new ErrorResponse($"No agent '{agentId}'. Available: {ids}", new { code = "NOT_FOUND" });
+                return null;
+            }
+
+            if (string.IsNullOrEmpty(def.FlueWorkflow))
+            {
+                prereqError = new ErrorResponse($"Agent '{def.Id}' has no flue route.", new { code = "MISSING_PREREQUISITE" });
+                return null;
+            }
+
+            return def;
         }
 
         static string ComposeContext(string contextText, List<string> refs)
