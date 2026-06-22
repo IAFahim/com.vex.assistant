@@ -9,13 +9,9 @@ using Vex.Codex.Editor;
 
 namespace Vex.Assistant.Tests
 {
-    // Layer 3 — live LLM: spawn flue → MiniMax → card, end to end, through the SAME C# path the
-    // editor uses (FlueService) but WITHOUT VexFlueChatWorkflow. Asserts the model actually returns
-    // the requested output — so a green bar here means "the brain works", independent of the UI.
-    // Ignored (not failed) when flue isn't configured, so the suite stays green on machines without it.
     public class FlueLiveTests
     {
-        const double TimeoutSeconds = 150;
+        private const double TimeoutSeconds = 150;
 
         [UnityTest]
         public IEnumerator Chat_workflow_real_model_returns_requested_token()
@@ -35,8 +31,16 @@ namespace Vex.Assistant.Tests
             var handle = FlueService.Run("chat", payload, flueDir, new FlueCallbacks
             {
                 OnProgress = _ => { },
-                OnResult = c => { card = c; done = true; },
-                OnError = e => { error = e; done = true; },
+                OnResult = c =>
+                {
+                    card = c;
+                    done = true;
+                },
+                OnError = e =>
+                {
+                    error = e;
+                    done = true;
+                }
             });
 
             var deadline = EditorApplication.timeSinceStartup + TimeoutSeconds;
@@ -46,7 +50,8 @@ namespace Vex.Assistant.Tests
             if (!done)
             {
                 handle.Cancel();
-                Assert.Fail($"flue chat did not return within {TimeoutSeconds}s (Node on the Editor's PATH? dist fresh?).");
+                Assert.Fail(
+                    $"flue chat did not return within {TimeoutSeconds}s (Node on the Editor's PATH? dist fresh?).");
             }
 
             Assert.IsNull(error, "flue transport/LLM error: " + error);

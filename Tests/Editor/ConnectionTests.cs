@@ -7,9 +7,6 @@ using Vex.Codex.Editor;
 
 namespace Vex.Assistant.Tests
 {
-    // Layer 2 — connection, no LLM: the connector is reachable, vex tools dispatch in-process,
-    // the agent roster + flue routing are wired, and the conversation memory + job model behave.
-    // Proves the plumbing the chat window rides WITHOUT going through the chat window.
     public class ConnectionTests
     {
         [Test]
@@ -35,10 +32,9 @@ namespace Vex.Assistant.Tests
         [Test]
         public void In_process_dispatch_reaches_a_real_tool()
         {
-            // director_inspect may legitimately fail with "no subscene"; we only assert the in-process
-            // dispatch reached the real handler (not the "unknown tool" guard) — i.e. the connection works.
             var r = VexService.Call("director_inspect", new JObject());
-            StringAssert.DoesNotContain("Unknown vex tool", r.Message, "in-process dispatch did not reach a real tool.");
+            StringAssert.DoesNotContain("Unknown vex tool", r.Message,
+                "in-process dispatch did not reach a real tool.");
         }
 
         [Test]

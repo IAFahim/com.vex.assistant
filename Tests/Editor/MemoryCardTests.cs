@@ -4,11 +4,12 @@ using Vex.Codex.Editor;
 
 namespace Vex.Assistant.Tests
 {
-    // Layer 1 — pure: the envelope every surface (chat window, assistant_run, codex) decodes.
-    // No Editor, no connector, no flue. If this breaks, every higher layer silently misreads results.
     public class MemoryCardTests
     {
-        static string Pretty(JObject o) => o.ToString(); // multi-line, mirrors run-dist.mjs stdout
+        private static string Pretty(JObject o)
+        {
+            return o.ToString();
+        }
 
         [Test]
         public void Parses_clean_card_fields()
@@ -26,7 +27,7 @@ namespace Vex.Assistant.Tests
                 ["gaps"] = "none",
                 ["session"] = "abc",
                 ["model"] = "minimax/MiniMax-M2.7",
-                ["skills"] = new JArray("unity-cli"),
+                ["skills"] = new JArray("unity-cli")
             }));
 
             Assert.IsNotNull(c);
@@ -58,8 +59,11 @@ namespace Vex.Assistant.Tests
             {
                 ["ok"] = true,
                 ["undo"] = new JArray(
-                    new JObject { ["tool"] = "asset_delete", ["params"] = new JObject { ["asset"] = "Assets/X.playable" } },
-                    new JObject { ["tool"] = "director_bind", ["params"] = new JObject() }),
+                    new JObject
+                    {
+                        ["tool"] = "asset_delete", ["params"] = new JObject { ["asset"] = "Assets/X.playable" }
+                    },
+                    new JObject { ["tool"] = "director_bind", ["params"] = new JObject() })
             }));
 
             Assert.IsNotNull(c);
@@ -74,7 +78,7 @@ namespace Vex.Assistant.Tests
             var c = MemoryCard.FromStdout(Pretty(new JObject
             {
                 ["ok"] = true,
-                ["undo"] = new JArray("// undo c# a", "// undo c# b"),
+                ["undo"] = new JArray("// undo c# a", "// undo c# b")
             }));
 
             Assert.IsNotNull(c);
@@ -95,7 +99,7 @@ namespace Vex.Assistant.Tests
             var c = MemoryCard.FromStdout(Pretty(new JObject
             {
                 ["ok"] = false,
-                ["result"] = "MISSING_PREREQUISITE: no director in the subscene",
+                ["result"] = "MISSING_PREREQUISITE: no director in the subscene"
             }));
 
             Assert.IsNotNull(c);

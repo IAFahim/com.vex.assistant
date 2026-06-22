@@ -9,17 +9,7 @@ using Vex.Codex.Editor;
 
 namespace Vex.Assistant.Editor
 {
-    /// <summary>
-    /// Vex skills config, surfaced as a Project Settings page under <b>AI ▸ Vex Skills</b> — right next to Unity's own
-    /// AI Assistant pages, so the whole AI tooling feels like one seamless extension (no separate top-menu window).
-    /// What Unity's native Manage Skills can't give us: a one-click <b>Allow All</b> (so the skill-router / chat agent
-    /// can draw from the whole auto-loaded catalog) and a <b>per-skill usage indicator</b> (how often each skill was
-    /// selected/used by the discovery loop + its avg helpfulness rating, read from flue's <c>.vex-usage.json</c>).
-    ///
-    /// Allow-state is the SAME EditorPrefs (AIAssistant.SkillAllowed.&lt;key&gt;) Unity's window + <see cref="VexEnabledSkills"/>
-    /// read, so toggles here reach the chat bridge immediately.
-    /// </summary>
-    static class VexSkillsSettings
+    internal static class VexSkillsSettings
     {
         [SettingsProvider]
         public static SettingsProvider Create()
@@ -30,32 +20,31 @@ namespace Vex.Assistant.Editor
                 label = "Vex Skills",
                 activateHandler = (_, __) => panel.Refresh(),
                 guiHandler = panel.OnGui,
-                keywords = new HashSet<string>(new[] { "vex", "skill", "allow", "usage", "flue", "ai", "rating" }),
+                keywords = new HashSet<string>(new[] { "vex", "skill", "allow", "usage", "flue", "ai", "rating" })
             };
         }
 
-        // A quick headless action kept on the menu for convenience.
         [MenuItem("Vex/Allow All Skills")]
-        static void AllowAllMenu()
+        private static void AllowAllMenu()
         {
             var n = VexEnabledSkills.SetAll(true);
-            Debug.Log($"[Vex] Allowed all {n} scanned skill(s). (If 0, open Project Settings ▸ AI ▸ Skills / Rescan first to populate the list.)");
+            Debug.Log(
+                $"[Vex] Allowed all {n} scanned skill(s). (If 0, open Project Settings ▸ AI ▸ Skills / Rescan first to populate the list.)");
         }
 
-        sealed class Panel
+        private sealed class Panel
         {
-            struct SkillStat { public int Selected; public int Used; public double AvgRating; public int RatingCount; public string Suggestion; }
-
-            readonly List<string> m_Keys = new();
-            Dictionary<string, SkillStat> m_Usage = new();
-            string m_Filter = "";
-            string m_UsagePath = "";
-            bool m_UsageFound;
+            private readonly List<string> m_Keys = new();
+            private string m_Filter = "";
+            private Dictionary<string, SkillStat> m_Usage = new();
+            private bool m_UsageFound;
+            private string m_UsagePath = "";
 
             public void Refresh()
             {
                 m_Keys.Clear();
-                m_Keys.AddRange(VexEnabledSkills.AllSkillKeys().OrderBy(VexEnabledSkills.NameOf, StringComparer.OrdinalIgnoreCase));
+                m_Keys.AddRange(VexEnabledSkills.AllSkillKeys()
+                    .OrderBy(VexEnabledSkills.NameOf, StringComparer.OrdinalIgnoreCase));
                 m_Usage = LoadUsage(out m_UsagePath, out m_UsageFound);
             }
 
@@ -77,19 +66,31 @@ namespace Vex.Assistant.Editor
                 foreach (var key in m_Keys)
                 {
                     var name = VexEnabledSkills.NameOf(key);
-                    if (!string.IsNullOrEmpty(m_Filter) && name.IndexOf(m_Filter, StringComparison.OrdinalIgnoreCase) < 0)
+                    if (!string.IsNullOrEmpty(m_Filter) &&
+                        name.IndexOf(m_Filter, StringComparison.OrdinalIgnoreCase) < 0)
                         continue;
                     DrawRow(key, name);
                 }
+
                 DrawFooter();
             }
 
-            void DrawToolbar()
+            private void DrawToolbar()
             {
                 using (new EditorGUILayout.HorizontalScope())
                 {
-                    if (GUILayout.Button("Allow All", GUILayout.Width(80))) { VexEnabledSkills.SetAll(true); Refresh(); }
-                    if (GUILayout.Button("Deny All", GUILayout.Width(80))) { VexEnabledSkills.SetAll(false); Refresh(); }
+                    if (GUILayout.Button("Allow All", GUILayout.Width(80)))
+                    {
+                        VexEnabledSkills.SetAll(true);
+                        Refresh();
+                    }
+
+                    if (GUILayout.Button("Deny All", GUILayout.Width(80)))
+                    {
+                        VexEnabledSkills.SetAll(false);
+                        Refresh();
+                    }
+
                     if (GUILayout.Button("Refresh", GUILayout.Width(70))) Refresh();
                     GUILayout.Space(8);
                     GUILayout.Label("Filter", GUILayout.Width(36));
@@ -100,7 +101,7 @@ namespace Vex.Assistant.Editor
                 }
             }
 
-            static void DrawHeader()
+            private static void DrawHeader()
             {
                 using (new EditorGUILayout.HorizontalScope(EditorStyles.helpBox))
                 {
@@ -113,7 +114,7 @@ namespace Vex.Assistant.Editor
                 }
             }
 
-            void DrawRow(string key, string name)
+            private void DrawRow(string key, string name)
             {
                 m_Usage.TryGetValue(name, out var stat);
                 using (new EditorGUILayout.HorizontalScope())
@@ -123,35 +124,41 @@ namespace Vex.Assistant.Editor
                     if (now != was) VexEnabledSkills.SetAllowed(key, now);
 
                     var tip = string.IsNullOrEmpty(stat.Suggestion) ? key : key + "\n\n💡 " + stat.Suggestion;
-                    GUILayout.Label(new GUIContent(string.IsNullOrEmpty(stat.Suggestion) ? name : name + " 💡", tip), GUILayout.MinWidth(140));
+                    GUILayout.Label(new GUIContent(string.IsNullOrEmpty(stat.Suggestion) ? name : name + " 💡", tip),
+                        GUILayout.MinWidth(140));
                     GUILayout.FlexibleSpace();
-                    GUILayout.Label(stat.Selected > 0 ? stat.Selected.ToString() : "·", Mini(stat.Selected > 0), GUILayout.Width(60));
-                    GUILayout.Label(stat.Used > 0 ? stat.Used.ToString() : "·", Mini(stat.Used > 0), GUILayout.Width(40));
-                    GUILayout.Label(stat.RatingCount > 0 ? $"★{stat.AvgRating:0.0}" : "·", Mini(stat.RatingCount > 0), GUILayout.Width(56));
+                    GUILayout.Label(stat.Selected > 0 ? stat.Selected.ToString() : "·", Mini(stat.Selected > 0),
+                        GUILayout.Width(60));
+                    GUILayout.Label(stat.Used > 0 ? stat.Used.ToString() : "·", Mini(stat.Used > 0),
+                        GUILayout.Width(40));
+                    GUILayout.Label(stat.RatingCount > 0 ? $"★{stat.AvgRating:0.0}" : "·", Mini(stat.RatingCount > 0),
+                        GUILayout.Width(56));
                 }
             }
 
-            static GUIStyle Mini(bool active)
+            private static GUIStyle Mini(bool active)
             {
                 var s = new GUIStyle(EditorStyles.miniLabel) { alignment = TextAnchor.MiddleRight };
                 if (!active) s.normal.textColor = new Color(0.5f, 0.5f, 0.5f);
                 return s;
             }
 
-            void DrawFooter()
+            private void DrawFooter()
             {
                 using (new EditorGUILayout.HorizontalScope(EditorStyles.helpBox))
                 {
-                    GUILayout.Label(m_UsageFound ? $"usage: {m_UsagePath}"
-                        : "usage file not found yet — runs through the chat→forge loop create it (.vex-usage.json).",
+                    GUILayout.Label(m_UsageFound
+                            ? $"usage: {m_UsagePath}"
+                            : "usage file not found yet — runs through the chat→forge loop create it (.vex-usage.json).",
                         EditorStyles.miniLabel);
                 }
             }
 
-            static Dictionary<string, SkillStat> LoadUsage(out string path, out bool found)
+            private static Dictionary<string, SkillStat> LoadUsage(out string path, out bool found)
             {
                 var result = new Dictionary<string, SkillStat>();
-                path = ""; found = false;
+                path = "";
+                found = false;
                 try
                 {
                     var dir = CodexSettings.Load()?.FlueDir;
@@ -165,11 +172,14 @@ namespace Vex.Assistant.Editor
                         if (p.Value is JObject s)
                             result[p.Name] = ParseStat(s);
                 }
-                catch { /* corrupt/locked → show no usage */ }
+                catch
+                {
+                }
+
                 return result;
             }
 
-            static SkillStat ParseStat(JObject s)
+            private static SkillStat ParseStat(JObject s)
             {
                 var rc = s.Value<int?>("ratingCount") ?? 0;
                 var rsum = s.Value<double?>("ratingSum") ?? 0;
@@ -179,8 +189,17 @@ namespace Vex.Assistant.Editor
                     Used = s.Value<int?>("used") ?? 0,
                     RatingCount = rc,
                     AvgRating = rc > 0 ? rsum / rc : 0,
-                    Suggestion = s.Value<string>("lastSuggestion") ?? "",
+                    Suggestion = s.Value<string>("lastSuggestion") ?? ""
                 };
+            }
+
+            private struct SkillStat
+            {
+                public int Selected;
+                public int Used;
+                public double AvgRating;
+                public int RatingCount;
+                public string Suggestion;
             }
         }
     }

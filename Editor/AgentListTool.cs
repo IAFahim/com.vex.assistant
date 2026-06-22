@@ -4,7 +4,6 @@ using UnityCliConnector;
 
 namespace Vex.Assistant.Editor
 {
-    /// <summary>unity-cli lookup: the vex specialized agents runnable via assistant_run.</summary>
     [UnityCliTool(
         Name = "agent_list",
         Group = "vex",

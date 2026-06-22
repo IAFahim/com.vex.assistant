@@ -4,15 +4,11 @@ using UnityCliConnector;
 
 namespace Vex.Assistant.Editor
 {
-    /// <summary>
-    /// unity-cli lookup: the deterministic vex-group [UnityCliTool]s + their JSON param schemas — so an agent
-    /// (or a separate flue process) can discover and call them via tool dispatch instead of authoring C#.
-    /// Returns the catalog as structured SuccessResponse data.
-    /// </summary>
     [UnityCliTool(
         Name = "vex_schemas",
         Group = "vex",
-        Description = "List the deterministic vex-group unity-cli tools (name, group, parameters) so an agent can call them via the tool dispatch instead of authoring C#.")]
+        Description =
+            "List the deterministic vex-group unity-cli tools (name, group, parameters) so an agent can call them via the tool dispatch instead of authoring C#.")]
     public static class VexSchemasTool
     {
         public static object HandleCommand(JObject p)
