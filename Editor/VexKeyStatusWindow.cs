@@ -211,10 +211,13 @@ namespace Vex.Assistant.Editor
 
             static string Popup(GUIContent label, string value, string[] values, string[] labels)
             {
-                var idx = Mathf.Max(0, System.Array.IndexOf(values, value ?? ""));
+                var rawIdx = System.Array.IndexOf(values, value ?? "");
+                var idx = Mathf.Max(0, rawIdx);
                 var contents = new GUIContent[labels.Length];
                 for (int i = 0; i < labels.Length; i++) contents[i] = new GUIContent(labels[i]);
-                return values[Mathf.Clamp(EditorGUILayout.Popup(label, idx, contents), 0, values.Length - 1)];
+                var sel = EditorGUILayout.Popup(label, idx, contents);
+                if (sel == idx && rawIdx < 0) return value;
+                return values[Mathf.Clamp(sel, 0, values.Length - 1)];
             }
 
             void Refresh()

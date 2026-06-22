@@ -37,9 +37,16 @@ namespace Vex.Assistant.Editor
             public string Context { get; set; }
         }
 
+        // Reads a string param defensively: a JSON string returns its value, null/missing returns null, and any
+        // non-scalar (object/array) token falls through to its text form rather than throwing InvalidCastException
+        // (Newtonsoft's explicit (string) cast throws on JObject/JArray). Lets the IsNullOrEmpty guards do their job.
+        private static string Str(JToken t) =>
+            t == null || t.Type == JTokenType.Null ? null :
+            t.Type == JTokenType.String ? (string)t : t.ToString();
+
         public static object HandleCommand(JObject @params)
         {
-            string prompt = (string)@params["prompt"];
+            string prompt = Str(@params["prompt"]);
             if (string.IsNullOrEmpty(prompt))
                 return new ErrorResponse("Required param 'prompt' is missing.", new { code = "MISSING_PREREQUISITE" });
 
@@ -52,10 +59,10 @@ namespace Vex.Assistant.Editor
             var payload = new JObject
             {
                 ["request"] = prompt,
-                ["context"] = (string)@params["context"] ?? string.Empty,
+                ["context"] = Str(@params["context"]) ?? string.Empty,
             };
-            string session = (string)@params["session"];
-            string model = (string)@params["model"];
+            string session = Str(@params["session"]);
+            string model = Str(@params["model"]);
             if (!string.IsNullOrEmpty(session)) payload["session"] = session;
             if (!string.IsNullOrEmpty(model)) payload["model"] = model;
 

@@ -33,11 +33,14 @@ namespace Vex.Assistant.Editor
 
         public static void Append(string conversationId, string user, string assistant)
         {
+            var u = (user ?? string.Empty).Trim();
+            if (u.Length > k_MaxTurnChars) u = u.Substring(0, k_MaxTurnChars) + " …";
+
             var a = (assistant ?? string.Empty).Trim();
             if (a.Length > k_MaxTurnChars) a = a.Substring(0, k_MaxTurnChars) + " …";
 
             var list = Get(conversationId);
-            list.Add($"User: {user}\nVex: {a}");
+            list.Add($"User: {u}\nVex: {a}");
             while (list.Count > k_MaxTurns)
                 list.RemoveAt(0);
 

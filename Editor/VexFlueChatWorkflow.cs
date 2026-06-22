@@ -269,7 +269,10 @@ namespace Vex.Assistant.Editor
                 return;
             EnsureAcknowledged();
 
-            var json = JsonConvert.SerializeObject(new { content });
+            // EscapeHtml turns '<'/'>' into </> so the model's reasoning text can never contain a literal
+            // </THOUGHT> (or <TOOL_CALL>) marker inside the JSON payload — otherwise ChatResponseUtils.ParseTags would
+            // close on the inner marker, hand a truncated JSON fragment to the deserializer, and drop the whole turn.
+            var json = JsonConvert.SerializeObject(new { content }, new JsonSerializerSettings { StringEscapeHandling = StringEscapeHandling.EscapeHtml });
             Receive(new ChatResponseV1
             {
                 MessageId = m_ResponseId,
