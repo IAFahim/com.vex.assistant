@@ -1,12 +1,13 @@
 using Unity.AI.Assistant.UI.Editor.Scripts;
 using Unity.AI.Toolkit.Accounts.Services;
 using Unity.AI.Toolkit.Accounts.Services.Data;
+using Unity.Scripting.LifecycleManagement;
 using UnityEditor;
 
 namespace Vex.Assistant.Editor
 {
     [InitializeOnLoad]
-    internal static class VexFlueController
+    internal static partial class VexFlueController
     {
         private const string k_ActiveKey = "vex.flue.gate.active";
         private const string k_ModelKey = "vex.flue.gate.model";
@@ -18,9 +19,11 @@ namespace Vex.Assistant.Editor
         static VexFlueController()
         {
             EditorApplication.update += Tick;
-            // ponytail: CoreCLR/no-domain-reload — drop this sub before the assembly unloads or it accumulates per recompile. Upgrade path: [OnCodeUnloading].
-            AssemblyReloadEvents.beforeAssemblyReload += () => EditorApplication.update -= Tick;
         }
+
+        // CoreCLR/no-domain-reload: unsubscribe before this assembly unloads on a code reload, else the sub accumulates per recompile.
+        [OnCodeUnloading]
+        private static void OnCodeUnloading() => EditorApplication.update -= Tick;
 
         private static bool Active
         {
