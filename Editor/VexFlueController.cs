@@ -18,6 +18,8 @@ namespace Vex.Assistant.Editor
         static VexFlueController()
         {
             EditorApplication.update += Tick;
+            // ponytail: CoreCLR/no-domain-reload — drop this sub before the assembly unloads or it accumulates per recompile. Upgrade path: [OnCodeUnloading].
+            AssemblyReloadEvents.beforeAssemblyReload += () => EditorApplication.update -= Tick;
         }
 
         private static bool Active
