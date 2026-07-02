@@ -80,7 +80,11 @@ namespace Vex.Assistant.Editor
                     {
                         var wasUnlocked = m_Keys != null;
                         VexKeyVault.MasterPassword = m_PwInput;
-                        if (wasUnlocked) m_Dirty = true;
+                        if (wasUnlocked)
+                            // The new password is already persisted to EditorPrefs by the setter above; re-encrypt
+                            // the on-disk blob NOW so it stays decryptable with that password. Just marking dirty
+                            // would strand the vault (old-password blob + new-password prefs) if the user quits first.
+                            SaveKeys();
                         else Reload();
                         GUI.FocusControl(null);
                     }
