@@ -185,7 +185,7 @@ namespace Vex.Assistant.Editor
                 return "⚠️ **tool failed** `" + t.Substring("[flue] tool:error".Length).Trim() + "`";
             if (t.StartsWith("[flue] compaction:start")) return "**Compacting context…**";
             if (t.StartsWith("[flue] ERROR")) return t.Substring("[flue] ".Length);
-            if (t.StartsWith("[codex]")) return t.Substring("[codex] ".Length);
+            if (t.StartsWith("[codex] ")) return t.Substring("[codex] ".Length);
 
             return null;
         }
@@ -241,11 +241,10 @@ namespace Vex.Assistant.Editor
         {
             if (m_Finished || WorkflowState == State.Closed)
                 return false;
-            m_Finished = true;
-            m_Handle = null;
-
             EnsureAcknowledged();
             FlushReasoning();
+            m_Finished = true;
+            m_Handle = null;
 
             Receive(new ChatResponseV1
                 { MessageId = m_ResponseId, Markdown = answer ?? string.Empty, LastMessage = false });

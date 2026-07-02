@@ -1,20 +1,29 @@
 using System;
 using UnityEditor;
 using UnityEngine;
+using Unity.Scripting.LifecycleManagement;
 using Object = UnityEngine.Object;
 
 namespace Vex.Assistant.Editor
 {
-    [InitializeOnLoad]
-    internal static class VexConsoleQuiet
+    internal static partial class VexConsoleQuiet
     {
         private const string k_Needle = "no additional error information was provided";
+        private static ILogHandler s_Original;
 
         static VexConsoleQuiet()
         {
-            if (Debug.unityLogger.logHandler is Filter)
+            s_Original = Debug.unityLogger.logHandler;
+            if (s_Original is Filter)
                 return;
-            Debug.unityLogger.logHandler = new Filter(Debug.unityLogger.logHandler);
+            Debug.unityLogger.logHandler = new Filter(s_Original);
+        }
+
+        [OnCodeUnloading]
+        private static void OnCodeUnloading()
+        {
+            if (s_Original != null)
+                Debug.unityLogger.logHandler = s_Original;
         }
 
         private sealed class Filter : ILogHandler

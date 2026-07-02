@@ -3,12 +3,12 @@ using System.IO;
 using Unity.AI.Assistant.Editor;
 using Unity.AI.Assistant.Skills;
 using UnityEditor;
+using Unity.Scripting.LifecycleManagement;
 using UpmPackageInfo = UnityEditor.PackageManager.PackageInfo;
 
 namespace Vex.Assistant.Editor
 {
-    [InitializeOnLoad]
-    internal static class VexPackageSkills
+    internal static partial class VexPackageSkills
     {
         private const string k_VexTag = "Skills.Vex.PackagePlugins";
         private static bool s_Reasserting;
@@ -16,8 +16,12 @@ namespace Vex.Assistant.Editor
         static VexPackageSkills()
         {
             EditorApplication.delayCall += Apply;
+            SkillsScanner.OnSkillsRescanned -= OnUnityRescanned;
             SkillsScanner.OnSkillsRescanned += OnUnityRescanned;
         }
+
+        [OnCodeUnloading]
+        private static void OnCodeUnloading() => SkillsScanner.OnSkillsRescanned -= OnUnityRescanned;
 
         [MenuItem("Vex/Rescan Package Skills (Plugins~/skills)")]
         public static void Apply()
