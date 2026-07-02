@@ -136,11 +136,20 @@ namespace Vex.Assistant.Editor
                 }
             }
 
+            private static GUIStyle s_MiniActive, s_MiniDim;
+
             private static GUIStyle Mini(bool active)
             {
-                var s = new GUIStyle(EditorStyles.miniLabel) { alignment = TextAnchor.MiddleRight };
-                if (!active) s.normal.textColor = new Color(0.5f, 0.5f, 0.5f);
-                return s;
+                // Cache both styles: this is called 3x per row inside a continuously-repainting IMGUI handler, so a
+                // fresh GUIStyle per call was steady editor GC. (CoreCLR keeps these across sessions — fine, immutable.)
+                if (s_MiniActive == null)
+                {
+                    s_MiniActive = new GUIStyle(EditorStyles.miniLabel) { alignment = TextAnchor.MiddleRight };
+                    s_MiniDim = new GUIStyle(s_MiniActive);
+                    s_MiniDim.normal.textColor = new Color(0.5f, 0.5f, 0.5f);
+                }
+
+                return active ? s_MiniActive : s_MiniDim;
             }
 
             private void DrawFooter()
